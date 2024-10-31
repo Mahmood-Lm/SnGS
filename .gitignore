@@ -1,0 +1,24 @@
+.git
+
+# Ignore Python virtual environments
+venv/
+env/
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore log files
+*.log
+
+# Ignore temporary files
+*.tmp
+*.temp
+
+# Ignore system-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore Python egg files
+*.egg
+*.egg-info/
+dist/sn-gamestate/pretrained_models/
