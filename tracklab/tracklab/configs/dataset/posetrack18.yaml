@@ -1,0 +1,8 @@
+defaults:
+  - default
+
+_target_: tracklab.wrappers.PoseTrack18
+
+dataset_path: ${data_dir}/PoseTrack18
+annotation_path: ${data_dir}/PoseTrack18
+eval_set: "val"

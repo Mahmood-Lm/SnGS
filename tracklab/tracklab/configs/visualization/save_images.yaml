@@ -1,0 +1,7 @@
+defaults:
+  - default
+
+cfg:
+  save_images: True
+  save_videos: False
+  show_online: False

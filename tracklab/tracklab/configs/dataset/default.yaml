@@ -1,0 +1,22 @@
+dataset_path: ${data_dir}  # FIXME needed for detector and reid instantiate(), even if not used when using external video
+nvid: -1                                    # "-1" to process all the videos
+nframes: -1                                 # "-1" to process all the frames for each video. evaluation is disabled if nframes != -1
+eval_set: "val"
+
+vids_dict:                                  # video names to use for each split (train/val/test/..). This is an example, the exact split name depends on the dataset
+  train: []
+  val: []  # leave empty to use all videos
+  test: []
+
+track_eval:
+  dataset_class: MotChallenge2DBox
+  BENCHMARK: "MotChallenge2DBox"
+  GT_FOLDER: "eval/gt" # Location of GT data
+  GT_LOC_FORMAT: '{gt_folder}/{seq}.txt' # '{gt_folder}/{seq}/gt/gt.txt'
+  TRACKERS_FOLDER: 'eval/pred' # Trackers location
+  TRACKER_SUB_FOLDER: '' # Tracker files are in TRACKER_FOLDER/tracker_name/TRACKER_SUB_FOLDER
+  OUTPUT_FOLDER: 'eval/results' # Where to save eval results (if None, same as TRACKERS_FOLDER)
+  OUTPUT_SUB_FOLDER: '' # Output files are saved in OUTPUT_FOLDER/tracker_name/OUTPUT_SUB_FOLDER
+  SPLIT_TO_EVAL: ${dataset.eval_set}
+  PRINT_CONFIG: False
+  DO_PREPROC: False

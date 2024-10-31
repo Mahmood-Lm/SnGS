@@ -1,0 +1,52 @@
+# TrackLab config
+
+# The defaults list contains the files that will be used
+# to create the final config file. This item *must* be
+# the first element in the file.
+defaults:
+  - dataset: dancetrack
+  - eval: trackeval
+  - engine: offline
+  - state: no_save
+  - visualization: save_videos
+  - modules/bbox_detector: yolov8
+  - modules/pose_topdown: hrnet_posetrack18
+  - modules/reid: bpbreid
+  - modules/track: oc_sort
+  - _self_
+
+# Pipeline definition :
+# - Defines the order in which the modules will be called
+# - If loading a tracking state from disk, remove modules whose outputs are already provided in the loaded state
+# Use 'pipeline: []' for an empty pipeline
+pipeline:
+  - bbox_detector
+  - track
+
+# Experiment name
+experiment_name: "tracklab"
+
+# Path definitions
+data_dir: "${project_dir}/data"
+model_dir: "${project_dir}/pretrained_models"
+
+# Machine configuration
+num_cores: 4
+use_wandb: False
+use_rich: True
+
+# Flags
+test_tracking: True
+print_config: False
+eval_tracking: True
+
+# configure Hydra to use the current working directory
+# and set up the output directory according to experiment_name
+project_dir: "${hydra:runtime.cwd}"
+hydra:
+  job:
+    chdir: True
+  run:
+    dir: "outputs/${experiment_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}"
+  sweep:
+    dir: "multirun_outputs/${experiment_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}"
