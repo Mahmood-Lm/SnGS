@@ -1,0 +1,94 @@
+import pandas as pd
+import torch
+import numpy as np
+import open_clip
+from PIL import Image
+import logging
+
+from tracklab.utils.collate import default_collate, Unbatchable
+from tracklab.pipeline.detectionlevel_module import DetectionLevelModule
+
+log = logging.getLogger(__name__)
+
+class openclip(DetectionLevelModule):
+    input_columns = ["bbox_ltwh"]
+    output_columns = ["jersey_number_detection", "jersey_number_confidence"]
+    collate_fn = default_collate
+
+    def __init__(self, batch_size, device, tracking_dataset=None):
+        super().__init__(batch_size=batch_size)
+        self.batch_size = batch_size
+        self.device = device
+
+        # Load OpenCLIP model
+        self.model, _, self.preprocess = open_clip.create_model_and_transforms('ViT-L-14', pretrained='openai')
+        self.model.to(self.device)
+        self.tokenizer = open_clip.get_tokenizer('ViT-L-14')
+
+    def no_jersey_number(self):
+        return None, 0
+
+    @torch.no_grad()
+    def preprocess(self, image, detection: pd.Series, metadata: pd.Series):
+        l, t, r, b = detection.bbox.ltrb(
+            image_shape=(image.shape[1], image.shape[0]), rounded=True
+        )
+        crop = image[t:b, l:r]
+        if crop.shape[0] == 0 or crop.shape[1] == 0:
+            crop = np.zeros((10, 10, 3), dtype=np.uint8)
+        crop = Unbatchable([crop])
+        batch = {
+            "img": crop,
+        }
+
+        return batch
+
+    def extract_numbers(self, text):
+        number = ''
+        for char in text:
+            if char.isdigit():
+                number += char
+        return number if number != '' else None
+
+    def choose_best_jersey_number(self, jersey_numbers, jn_confidences):
+        if len(jersey_numbers) == 0:
+            return self.no_jersey_number()
+        else:
+            jn_confidences = np.array(jn_confidences)
+            idx_sort = np.argsort(jn_confidences)
+            return jersey_numbers[idx_sort[-1]], jn_confidences[
+                idx_sort[-1]]  # return the highest confidence jersey number
+
+    def extract_jersey_numbers_from_clip(self, image):
+        image = self.preprocess(Image.fromarray(image)).unsqueeze(0).to(self.device)
+        text_inputs = self.tokenizer([f"jersey number {i}" for i in range(1, 100)]).to(self.device)
+
+        with torch.no_grad():
+            image_features = self.model.encode_image(image)
+            text_features = self.model.encode_text(text_inputs)
+
+            image_features /= image_features.norm(dim=-1, keepdim=True)
+            text_features /= text_features.norm(dim=-1, keepdim=True)
+
+            similarity = (100.0 * image_features @ text_features.T).softmax(dim=-1)
+            confidence, index = similarity[0].max(dim=0)
+            jersey_number = index.item() + 1  # since index is 0-based
+
+        return str(jersey_number), confidence.item()
+
+    @torch.no_grad()
+    def process(self, batch, detections: pd.DataFrame, metadatas: pd.DataFrame):
+        jersey_number_detection = []
+        jersey_number_confidence = []
+        images_np = [img.cpu().numpy() for img in batch['img']]
+        del batch['img']
+
+        for image in images_np:
+            jn, conf = self.extract_jersey_numbers_from_clip(image)
+            jersey_number_detection.append(jn)
+            jersey_number_confidence.append(conf)
+
+        detections['jersey_number_detection'] = jersey_number_detection
+        detections['jersey_number_confidence'] = jersey_number_confidence
+
+        return detections
