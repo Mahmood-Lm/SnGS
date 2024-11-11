@@ -51,14 +51,14 @@ class YOLOv8(ImageLevelModule):
     @torch.no_grad()
     def process(self, batch: Any, detections: pd.DataFrame, metadatas: pd.DataFrame):
         images, shapes = batch
-        results_by_image = self.model(images)
+        results_by_image = self.model(images) #Edited to include imgsz
         detections = []
         for results, shape, (_, metadata) in zip(
             results_by_image, shapes, metadatas.iterrows()
         ):
             for bbox in results.boxes.cpu().numpy():
                 # discard `ball` class
-                if bbox.cls != 0 and bbox.conf >= self.cfg.min_confidence:
+                if bbox.conf >= self.cfg.min_confidence: #Removed discarding of classes as we have only 1 class
                     detections.append(
                         pd.Series(
                             dict(
