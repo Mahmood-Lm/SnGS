@@ -16,26 +16,7 @@ class OpenCLIP:
         self.tokenizer = open_clip.get_tokenizer('ViT-L-14')
 
 
-    def preprocess_image(self, image):
-        # Resize the image
-        image = image.resize((224, 224))
-
-        # Convert to grayscale
-        image = ImageOps.grayscale(image)
-
-        # Enhance contrast
-        enhancer = ImageEnhance.Contrast(image)
-        image = enhancer.enhance(2.0)
-
-        # Normalize the image
-        image = np.array(image).astype(np.float32) / 255.0
-        image = (image - 0.5) / 0.5  # Normalize to [-1, 1]
-
-        return image
-
-    
     def extract_jersey_number(self, image):
-        # image = self.preprocess_image(Image.fromarray(image)) #Preprocessing 
         image = self.preprocess(Image.fromarray(image)).unsqueeze(0).to(self.device)
         text_inputs = self.tokenizer([f"jersey number {i}" for i in range(1, 100)]).to(self.device)
 
