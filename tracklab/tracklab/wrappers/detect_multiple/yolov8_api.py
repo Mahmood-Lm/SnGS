@@ -58,7 +58,7 @@ class YOLOv8(ImageLevelModule):
         ):
             for bbox in results.boxes.cpu().numpy():
                 # discard `ball` class
-                if bbox.conf >= self.cfg.min_confidence: #Removed discarding of classes as we have only 1 class
+                if bbox.cls == 0 and bbox.conf >= self.cfg.min_confidence: #Removed discarding of classes as we have only 1 class
                     detections.append(
                         pd.Series(
                             dict(
@@ -66,7 +66,7 @@ class YOLOv8(ImageLevelModule):
                                 bbox_ltwh=ltrb_to_ltwh(bbox.xyxy[0], shape),
                                 bbox_conf=bbox.conf[0],
                                 video_id=metadata.video_id,
-                                category_id= bbox.cls,  # Classes: 1: 'goalkeeper', 2: 'player', 3: 'referee'
+                                category_id= 1 #bbox.cls,  # Classes: 1: 'goalkeeper', 2: 'player', 3: 'referee'
                             ),
                             name=self.id,
                         )

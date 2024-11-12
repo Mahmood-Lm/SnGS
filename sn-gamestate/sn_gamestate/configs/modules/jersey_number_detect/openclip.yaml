@@ -1,0 +1,3 @@
+_target_: sn_gamestate.jersey.openclip_api.OpenCLIP
+batch_size: 32
+cfg: []
