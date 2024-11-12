@@ -14,7 +14,7 @@ defaults:
   - modules/bbox_detector: yolov8
   - modules/reid: prtreid
   - modules/track: bpbreid_strong_sort
-  - modules/jersey_number_detect: mmocr
+  - modules/jersey_number_detect: openclip
   - modules/team: kmeans_embeddings
   - modules/team_side: mean_position
   - modules/tracklet_agg: voting_role_jn
@@ -27,15 +27,15 @@ defaults:
 # - If loading a tracking state from disk, remove modules whose outputs are already provided in the loaded state
 # Use 'pipeline: []' for an empty pipeline (e.g. when loading all tracking results from a saved .pklz tracker state)
 pipeline:
-  - bbox_detector
-  - reid
-  - track
-  - pitch
-  - calibration
+  # - bbox_detector
+  # - reid
+  # - track
+  # - pitch
+  # - calibration
   - jersey_number_detect
-  - tracklet_agg
-  - team
-  - team_side
+  # - tracklet_agg
+  # - team
+  # - team_side
 
 
 # Experiment name
@@ -76,8 +76,8 @@ dataset:
 
 # Tracker state (save computation time by dumping tracking results on disk for later re-use)
 state:
-  save_file: "states/${experiment_name}.pklz"  # 'null' to disable saving. This is the save path for the tracker_state object that contains all modules outputs (bboxes, reid embeddings, jersey numbers, roles, teams, etc)
-  load_file: null  # 'null' to disable loading. Load a file that was saved with the 'state.save_file' option above. Don't forget to remove from the pipeline all modules that should not be run again, but loaded from the saved tracker state.
+  save_file:  null #"states/${experiment_name}.pklz"  # 'null' to disable saving. This is the save path for the tracker_state object that contains all modules outputs (bboxes, reid embeddings, jersey numbers, roles, teams, etc)
+  load_file: "/home/Mahmood/soccernet/sn-gamestate/outputs/sn-gamestate/2024-10-26/SNGS-117/states/sn-gamestate.pklz" #null  # 'null' to disable loading. Load a file that was saved with the 'state.save_file' option above. Don't forget to remove from the pipeline all modules that should not be run again, but loaded from the saved tracker state.
 
 # Visualization
 visualization:

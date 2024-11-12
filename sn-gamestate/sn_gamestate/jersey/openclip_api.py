@@ -39,22 +39,22 @@ class OpenCLIP(DetectionLevelModule):
 
         return batch
 
-    def extract_jersey_numbers_from_clip(self, image):
-        image = self.preprocess(Image.fromarray(image)).unsqueeze(0).to(self.device)
+    def extract_jersey_numbers_from_clip(self, images):
+        images = torch.stack([self.preprocess(Image.fromarray(img)).unsqueeze(0) for img in images]).to(self.device)
         text_inputs = self.tokenizer([f"jersey number {i}" for i in range(1, 100)]).to(self.device)
 
         with torch.no_grad():
-            image_features = self.model.encode_image(image)
+            image_features = self.model.encode_image(images)
             text_features = self.model.encode_text(text_inputs)
 
             image_features /= image_features.norm(dim=-1, keepdim=True)
             text_features /= text_features.norm(dim=-1, keepdim=True)
 
             similarity = (100.0 * image_features @ text_features.T).softmax(dim=-1)
-            confidence, index = similarity[0].max(dim=0)
-            jersey_number = index.item() + 1  # since index is 0-based
+            confidences, indices = similarity.max(dim=-1)
+            jersey_numbers = indices.cpu().numpy() + 1  # since index is 0-based
 
-        return str(jersey_number), confidence.item()
+        return jersey_numbers, confidences.cpu().numpy()
 
     @torch.no_grad()
     def process(self, batch, detections: pd.DataFrame, metadatas: pd.DataFrame):
@@ -63,9 +63,9 @@ class OpenCLIP(DetectionLevelModule):
         images_np = [img.cpu().numpy() for img in batch['img']]
         del batch['img']
 
-        for image in images_np:
-            jn, conf = self.extract_jersey_numbers_from_clip(image)
-            jersey_number_detection.append(jn)
+        jersey_numbers, confidences = self.extract_jersey_numbers_from_clip(images_np)
+        for jn, conf in zip(jersey_numbers, confidences):
+            jersey_number_detection.append(str(jn))
             jersey_number_confidence.append(conf)
 
         detections['jersey_number_detection'] = jersey_number_detection
