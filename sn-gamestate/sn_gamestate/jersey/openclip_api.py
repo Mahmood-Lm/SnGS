@@ -10,23 +10,21 @@ from tracklab.pipeline.detectionlevel_module import DetectionLevelModule
 
 log = logging.getLogger(__name__)
 
-class openclip(DetectionLevelModule):
-    input_columns = ["bbox_ltwh"]
+class OpenCLIP(DetectionLevelModule):
+    input_columns = []
     output_columns = ["jersey_number_detection", "jersey_number_confidence"]
     collate_fn = default_collate
 
-    def __init__(self, batch_size, device, tracking_dataset=None):
+    def __init__(self, cfg, device, batch_size, tracking_dataset=None):
         super().__init__(batch_size=batch_size)
-        self.batch_size = batch_size
+        self.cfg = cfg
         self.device = device
-
-        # Load OpenCLIP model
         self.model, _, self.preprocess = open_clip.create_model_and_transforms('ViT-L-14', pretrained='openai')
         self.model.to(self.device)
         self.tokenizer = open_clip.get_tokenizer('ViT-L-14')
 
     def no_jersey_number(self):
-        return None, 0
+        return [None, None, 0]
 
     @torch.no_grad()
     def preprocess(self, image, detection: pd.Series, metadata: pd.Series):
@@ -34,30 +32,12 @@ class openclip(DetectionLevelModule):
             image_shape=(image.shape[1], image.shape[0]), rounded=True
         )
         crop = image[t:b, l:r]
-        if crop.shape[0] == 0 or crop.shape[1] == 0:
-            crop = np.zeros((10, 10, 3), dtype=np.uint8)
         crop = Unbatchable([crop])
         batch = {
             "img": crop,
         }
 
         return batch
-
-    def extract_numbers(self, text):
-        number = ''
-        for char in text:
-            if char.isdigit():
-                number += char
-        return number if number != '' else None
-
-    def choose_best_jersey_number(self, jersey_numbers, jn_confidences):
-        if len(jersey_numbers) == 0:
-            return self.no_jersey_number()
-        else:
-            jn_confidences = np.array(jn_confidences)
-            idx_sort = np.argsort(jn_confidences)
-            return jersey_numbers[idx_sort[-1]], jn_confidences[
-                idx_sort[-1]]  # return the highest confidence jersey number
 
     def extract_jersey_numbers_from_clip(self, image):
         image = self.preprocess(Image.fromarray(image)).unsqueeze(0).to(self.device)
