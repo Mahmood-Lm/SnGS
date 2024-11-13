@@ -7,7 +7,7 @@ import requests
 import numpy as np
 from tqdm import tqdm
 from tracklab.utils.cv2 import cv2_load_image, crop_bbox_ltwh
-from tracklab.utils.attribute_voting import select_highest_voted_att
+from tracklab.utils.attribute_voting import select_highest_voted_att, select_heaviest_voted_att
 
 from tracklab.pipeline.videolevel_module import VideoLevelModule
 from tracklab.utils.openmmlab import get_checkpoint
@@ -45,7 +45,8 @@ class MajorityVoteTracklet(VideoLevelModule):
             for attribute in self.attributes:
                 attribute_detection = tracklet[f"{attribute}_detection"]
                 attribute_confidence = tracklet[f"{attribute}_confidence"]
-                attribute_value = [select_highest_voted_att(attribute_detection, attribute_confidence)] * len(tracklet)            
+                # attribute_value = [select_highest_voted_att(attribute_detection, attribute_confidence)] * len(tracklet)          
+                attribute_value = [select_heaviest_voted_att(attribute_detection, attribute_confidence)] * len(tracklet)            
                 detections.loc[tracklet.index, attribute] = attribute_value
             
         return detections
