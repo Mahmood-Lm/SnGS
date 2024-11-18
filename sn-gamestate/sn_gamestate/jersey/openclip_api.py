@@ -61,9 +61,7 @@ class OpenCLIP(DetectionLevelModule):
 
     @torch.no_grad()
     def preprocess(self, image, detection: pd.Series, metadata: pd.Series):
-        l, t, r, b = detection.bbox.ltrb(
-            image_shape=(image.shape[1], image.shape[0]), rounded=True
-        )
+        l, t, r, b = detection.bbox.ltrb(image_shape=(image.shape[1], image.shape[0]), rounded=True)
         crop = image[t:b, l:r]
 
         # Double the size of the cropped image for better recognition
@@ -74,6 +72,12 @@ class OpenCLIP(DetectionLevelModule):
         batch = {
             "img": crop,
         }
+<<<<<<< HEAD
+        return self.preprocess(batch)
+
+    def extract_jersey_numbers_from_clip(self, images):
+        images = torch.stack([self.preprocess(Image.fromarray(img)).unsqueeze(0) for img in images]).to(self.device)
+=======
         return batch
 
     @torch.no_grad()
@@ -91,9 +95,14 @@ class OpenCLIP(DetectionLevelModule):
     def extract_jersey_number(self, images):
         self.load_model()  # Ensure the model is loaded before processing the batch
         images = torch.stack([self.preprocess1(Image.fromarray(image)) for image in images]).to(self.device)
+<<<<<<< HEAD
         # text_inputs = self.tokenizer([f"jersey number {i}" for i in range(2, 100)]).to(self.device)
         text_inputs = self.tokenizer([f"jersey number {i}" for i in range(2, 100)] + ["jersey number none"]).to(self.device)
 
+=======
+>>>>>>> 28dfcdfe75f8688ebe98e690e78e92c12f730539
+        text_inputs = self.tokenizer([f"jersey number {i}" for i in range(1, 100)]).to(self.device)
+>>>>>>> e3c5b2928d5818e71290cf3f89a8b271abf46a0e
 
         with torch.no_grad():
             image_features = self.model.encode_image(images)
@@ -104,9 +113,35 @@ class OpenCLIP(DetectionLevelModule):
 
             similarity = (100.0 * image_features @ text_features.T).softmax(dim=-1)
             confidences, indices = similarity.max(dim=-1)
+<<<<<<< HEAD
             # jersey_numbers = (indices + 2).tolist()  # since index is 0-based and we start from 2
             jersey_numbers = [(index + 2) if index < 98 else None for index in indices.tolist()]  # Adjust for "none"
 
+=======
+<<<<<<< HEAD
+            jersey_numbers = indices.cpu().numpy() + 1  # since index is 0-based
+
+        return jersey_numbers, confidences.cpu().numpy()
+
+    @torch.no_grad()
+    def process(self, batch, detections: pd.DataFrame, metadatas: pd.DataFrame):
+        jersey_number_detection = []
+        jersey_number_confidence = []
+        images_np = [img.cpu().numpy() for img in batch['img']]
+        del batch['img']
+
+        jersey_numbers, confidences = self.extract_jersey_numbers_from_clip(images_np)
+        for jn, conf in zip(jersey_numbers, confidences):
+            jersey_number_detection.append(str(jn))
+            jersey_number_confidence.append(conf)
+
+        detections['jersey_number_detection'] = jersey_number_detection
+        detections['jersey_number_confidence'] = jersey_number_confidence
+
+        return detections
+=======
+            jersey_numbers = (indices + 1).tolist()  # since index is 0-based
+>>>>>>> e3c5b2928d5818e71290cf3f89a8b271abf46a0e
 
             # Filter results based on confidence threshold
             filtered_jersey_numbers = []
@@ -127,3 +162,4 @@ class OpenCLIP(DetectionLevelModule):
             
 
         return filtered_jersey_numbers, filtered_confidences
+>>>>>>> 28dfcdfe75f8688ebe98e690e78e92c12f730539
