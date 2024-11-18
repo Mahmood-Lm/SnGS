@@ -10,9 +10,9 @@ from testclip import OpenCLIP
 device = 'cuda'
 
 #MMOCR
-ocr = MMOCRInferencer(det='dbnet_resnet18_fpnc_1200e_icdar2015', rec='SAR')
-textdetinferencer = TextDetInferencer('dbnet_resnet18_fpnc_1200e_icdar2015', device=device)
-textrecinferencer = TextRecInferencer('SAR', device=device)
+# ocr = MMOCRInferencer(det='dbnet_resnet18_fpnc_1200e_icdar2015', rec='SAR')
+# textdetinferencer = TextDetInferencer('dbnet_resnet18_fpnc_1200e_icdar2015', device=device)
+# textrecinferencer = TextRecInferencer('SAR', device=device)
 
 #CLIP
 model = OpenCLIP(device=device)
@@ -20,16 +20,16 @@ model = OpenCLIP(device=device)
 
 
 #ImagePrep
-image = cv2.imread('/home/Mahmood/soccernet/sn-gamestate/sn_gamestate/jersey/images/000001.jpg')
+image = cv2.imread('/home/Mahmood/soccernet/sn-gamestate/sn_gamestate/jersey/images/164_229.jpg')
 image_np = np.array(image)
-# image_np = cv2.resize(image_np, (image_np.shape[1] * 2, image_np.shape[0] * 2))
+image_np = cv2.resize(image_np, (image_np.shape[1] * 2, image_np.shape[0] * 2))
 
 #Run CLIP
 jersey_number, confidence = model.process(image_np)
-print("CLIP Reusults: ",jersey_number, confidence)
+print("CLIP Results: ",jersey_number, confidence)
 
 #Run MMOCR
-result = ocr(image_np)
-print("MMOCR Results",result)
+# result = ocr(image_np)
+# print("MMOCR Results",result)
 
 

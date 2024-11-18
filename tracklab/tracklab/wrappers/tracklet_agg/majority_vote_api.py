@@ -45,8 +45,8 @@ class MajorityVoteTracklet(VideoLevelModule):
             for attribute in self.attributes:
                 attribute_detection = tracklet[f"{attribute}_detection"]
                 attribute_confidence = tracklet[f"{attribute}_confidence"]
-                # attribute_value = [select_highest_voted_att(attribute_detection, attribute_confidence)] * len(tracklet)          
-                attribute_value = [select_heaviest_voted_att(attribute_detection, attribute_confidence)] * len(tracklet)            
+                attribute_value = [select_highest_voted_att(attribute_detection, attribute_confidence)] * len(tracklet)          
+                # attribute_value = [select_heaviest_voted_att(attribute_detection, attribute_confidence)] * len(tracklet)  # Using heaviest voting(WA) instead of highest voting        
                 detections.loc[tracklet.index, attribute] = attribute_value
             
         return detections
