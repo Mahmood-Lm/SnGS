@@ -5564,7 +5564,7 @@ torch = "1.13.1"
 torchreid = {git = "https://github.com/VlSomers/bpbreid"}
 torchvision = "0.14.1"
 track-bench-track = {path = "plugins/track", develop = true}
-ultralytics = "8.0.100"
+ultralytics = "*"
 yt-dlp = ">2023.12.30"
 
 [package.source]
@@ -6067,4 +6067,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "990f80f02fee6966d0b1a3ffbb58d2ede7741568d3a1f7599e36212b1598a9a1"
+content-hash = "6213b16b1114cc55149e0bab1664a9f665497f41b0d56649303797489e3f6174"

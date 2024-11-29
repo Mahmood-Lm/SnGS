@@ -23,3 +23,5 @@ Thumbs.db
 *.egg-info/
 dist/sn-gamestate/pretrained_models/
 sn-gamestate/full-states/
+sn-gamestate/wise-ft/wft_models/wft_model_0.5.pt
+sn-gamestate/sn_gamestate/jersey/images/

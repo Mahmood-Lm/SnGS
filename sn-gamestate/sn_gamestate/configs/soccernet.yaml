@@ -27,15 +27,15 @@ defaults:
 # - If loading a tracking state from disk, remove modules whose outputs are already provided in the loaded state
 # Use 'pipeline: []' for an empty pipeline (e.g. when loading all tracking results from a saved .pklz tracker state)
 pipeline:
-  # - bbox_detector
-  # - reid
-  # - track
-  # - pitch
-  # - calibration
+  - bbox_detector
+  - reid
+  - track
+  - pitch
+  - calibration
   - jersey_number_detect
   - tracklet_agg
-  # - team
-  # - team_side
+  - team
+  - team_side
 
 
 # Experiment name
@@ -47,18 +47,18 @@ data_dir: "${project_dir}/data"
 model_dir: "${project_dir}/pretrained_models"
 
 # Machine configuration
-num_cores: 2 #Edited(Org:4)
+num_cores: 4 #Edited(Org:4)
 use_wandb: False
 use_rich: True
 
 modules: # Allows module-specific batch_size and other configuration
-  bbox_detector: {batch_size: 18} #edited(Org:24)
+  bbox_detector: {batch_size: 24} #edited(Org:24)
   pose_bottomup: {batch_size: 16}
-  reid: {batch_size: 16} #edited(Org:128)
+  reid: {batch_size: 128} #edited(Org:128)
   track: {batch_size: 128}
-  pitch: {batch_size: 8}
+  pitch: {batch_size: 12} #edited(Org:8)
   calibration: {batch_size: 256}
-  jersey_number_detect: {batch_size: 36}
+  jersey_number_detect: {batch_size: 128}
 
 # Flags
 test_tracking: True
@@ -83,6 +83,14 @@ state:
 visualization:
   cfg:
     save_videos: True  # Save a .mp4 video on disk with the game state reconstruction output (see 'tracklab/tracklab/configs/visualization' for more options)
+    process_n_videos: 1     # Amount of video to visualize, -1 to process all videos
+    prediction:                 
+      draw_bbox: True #CHANGE TO TRUE
+      print_bbox_confidence: False
+    ground_truth:
+      draw_bbox: False #True
+      print_bbox_confidence: False #True
+
 
 # configure Hydra to use the current working directory
 # and set up the output directory according to experiment_name

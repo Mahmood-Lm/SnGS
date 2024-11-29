@@ -23,35 +23,36 @@ class OpenCLIP(DetectionLevelModule):
         self.model = None
         self.preprocess1 = None
         self.tokenizer = None
-        self.pretrained_path = '/home/Mahmood/soccernet/sn-gamestate/pretrained_models/jersey/epoch_5.pt'
+        # self.pretrained_path = '/home/Mahmood/soccernet/sn-gamestate/pretrained_models/jersey/V3_epoch_5.pt'
+        self.pretrained_path = '/home/Mahmood/soccernet/sn-gamestate/wise-ft/wft_models/wft_model_0.5.pt'
 
 
     # Load the model and tokenizer when the jersey recognition module is needed as to not overload the memory.
     def load_model(self):
         if self.model is None:
-            self.model, _, self.preprocess1 = open_clip.create_model_and_transforms('ViT-L-14', pretrained="openai" , device=self.device)
+            self.model, _, self.preprocess1 = open_clip.create_model_and_transforms('ViT-L-14', pretrained=None , device=self.device)
 
 
             # print("Device:", self.device)
             # Print initial parameters
             print("Initial parameters:", list(self.model.parameters())[0][0][:5])
 
-            # try:
-            #     # Load the fine-tuned model
-            #     checkpoint = torch.load(self.pretrained_path, map_location=self.device)
+            try:
+                # Load the fine-tuned model
+                checkpoint = torch.load(self.pretrained_path, map_location=self.device)
 
-            #     if 'state_dict' in checkpoint:
-            #         self.model.load_state_dict(checkpoint['state_dict'])
-            #     else:
-            #         self.model.load_state_dict(checkpoint)
+                if 'state_dict' in checkpoint:
+                    self.model.load_state_dict(checkpoint['state_dict'])
+                else:
+                    self.model.load_state_dict(checkpoint)
 
-            #     # self.model.to(self.device)
+                # self.model.to(self.device)
 
-            #     # Print parameters after loading checkpoint
-            #     print("Parameters after loading checkpoint:", list(self.model.parameters())[0][0][:5])
-            # except Exception as e:
-            #     print(f"Error loading fine-tuned model: {e}")
-            #     return
+                # Print parameters after loading checkpoint
+                print("Parameters after loading checkpoint:", list(self.model.parameters())[0][0][:5])
+            except Exception as e:
+                print(f"Error loading fine-tuned model: {e}")
+                return
             
             # self.model.to(self.device)
             self.tokenizer = open_clip.get_tokenizer('ViT-L-14')
@@ -112,7 +113,7 @@ class OpenCLIP(DetectionLevelModule):
             filtered_jersey_numbers = []
             filtered_confidences = []
             for jersey_number, confidence in zip(jersey_numbers, confidences.tolist()):
-                if jersey_number is not None and confidence >= 0.1:
+                if jersey_number is not None and confidence >= 0.7:
                     filtered_jersey_numbers.append(str(jersey_number))
                     filtered_confidences.append(confidence)
                     print(f"Jersey number: {jersey_number}, Confidence: {confidence}")
