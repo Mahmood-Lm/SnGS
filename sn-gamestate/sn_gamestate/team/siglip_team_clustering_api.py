@@ -68,6 +68,7 @@ import numpy as np
 import logging
 import warnings
 from tracklab.pipeline.detectionlevel_module import DetectionLevelModule
+from tracklab.utils.collate import default_collate, Unbatchable
 from sklearn.cluster import KMeans
 from transformers import AutoProcessor, SiglipVisionModel
 import umap
@@ -132,6 +133,7 @@ class TeamClassifier:
 class TrackletTeamClustering(DetectionLevelModule):
     input_columns = ["track_id", "embeddings", "role"]
     output_columns = ["team_cluster"]
+    collate_fn = default_collate
 
     def __init__(self, cfg, device, batch_size, tracking_dataset=None):
         super().__init__(batch_size=batch_size)
@@ -142,16 +144,22 @@ class TrackletTeamClustering(DetectionLevelModule):
 
     @torch.no_grad()
     def preprocess(self, image, detection: pd.Series, metadata: pd.Series):
-        l, t, r, b = detection.bbox.ltrb(
+        if detection.role == "player":
+            l, t, r, b = detection.bbox.ltrb(
             image_shape=(image.shape[1], image.shape[0]), rounded=True
-        )
-        crop = image[t:b, l:r]
+            )
+            crop = image[t:b, l:r]
+            if crop.shape[0] == 0 or crop.shape[1] == 0:
+                crop = np.zeros((10, 10, 3), dtype=np.uint8)
+            crop = np.array(crop)
+            crop = Unbatchable([crop])
+            batch = {
+                "img": crop,
+            }
 
-        # Double the size of the cropped image for better recognition
-        crop = Image.fromarray(crop).resize((crop.shape[1] * 2, crop.shape[0] * 2))
-        crop = np.array(crop)
+            return batch
+        return None
 
-        return crop
 
     @torch.no_grad()
     def process(self, batch, detections: pd.DataFrame, metadatas: pd.DataFrame):
@@ -161,19 +169,40 @@ class TrackletTeamClustering(DetectionLevelModule):
             detections['team_cluster'] = np.nan  # Initialize 'team_cluster' with a default value
             return detections
 
-        # Crop the players from the image
-        crops = [self.preprocess(batch['img'][i], row, metadatas.iloc[i]) for i, row in player_detections.iterrows()]
+        # Check if the batch is empty
+        if not batch['img']:
+            detections['team_cluster'] = np.nan  # Initialize 'team_cluster' with a default value
+            return detections
+
+        # Filter out None values
+        images_np = [img.cpu().numpy() for img in batch['img'] if img is not None]
+        if not images_np:
+            detections['team_cluster'] = np.nan  # Initialize 'team_cluster' with a default value
+            return detections
+        del batch['img']
 
         # Select a random subset (10%) of the crops for fitting the model
-        subset_size = max(1, int(0.1 * len(crops)))
-        subset_indices = np.random.choice(len(crops), subset_size, replace=False)
-        subset_crops = [crops[i] for i in subset_indices]
+        subset_size = max(1, int(0.1 * len(images_np)))
+        subset_indices = np.random.choice(len(images_np), subset_size, replace=False)
+        subset_crops = [images_np[i] for i in subset_indices]
 
         # Perform clustering using TeamClassifier
         self.team_classifier.fit(subset_crops)
-        player_detections['team_cluster'] = self.team_classifier.predict(crops)
+        
+        # Ensure the number of predictions matches the number of player detections
+        # if len(images_np) != len(player_detections):
+        #     raise ValueError("Number of crops does not match number of player detections")
+
+        player_detections['team_cluster'] = self.team_classifier.predict(images_np)
+
+        # Assign the most frequent team cluster to each tracklet
+        tracklet_clusters = player_detections.groupby('track_id')['team_cluster'].agg(lambda x: x.value_counts().idxmax()).reset_index()
+
+        # Ensure the shapes match before merging
+        if 'team_cluster' in detections.columns:
+            detections = detections.drop(columns=['team_cluster'])
 
         # Map the team cluster back to the original detections DataFrame
-        detections = detections.merge(player_detections[['track_id', 'team_cluster']], on='track_id', how='left', sort=False)
+        detections = detections.merge(tracklet_clusters, on='track_id', how='left', sort=False, suffixes=('', '_duplicate'))
 
         return detections
