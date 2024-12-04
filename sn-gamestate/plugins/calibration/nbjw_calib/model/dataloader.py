@@ -1,14 +1,19 @@
 import copy
 import os
+import sys
 import glob
 import json
 import torch
 import numpy as np
+import torchvision.transforms as T
+import torchvision.transforms.functional as f
+
+from torchvision.transforms import v2
 from torch.utils.data import Dataset
 from PIL import Image
 
-from nbjw_calib.utils.utils_keypoints import KeypointsDB
-from nbjw_calib.utils.utils_keypointsWC import KeypointsWCDB
+from utils.utils_keypoints import KeypointsDB
+from utils.utils_keypointsWC import KeypointsWCDB
 
 
 class SoccerNetCalibrationDataset(Dataset):
@@ -19,8 +24,8 @@ class SoccerNetCalibrationDataset(Dataset):
         self.split = split
         self.transform = transform
 
-        #self.match_info = json.load(open(root_dir + split + '/match_info.json'))
-        self.files = self.get_image_files(rate=3)
+        self.match_info = json.load(open(root_dir + split + '/match_info.json'))
+        self.files = self.get_image_files(rate=1)
 
         if main_cam_only:
             self.get_main_camera()

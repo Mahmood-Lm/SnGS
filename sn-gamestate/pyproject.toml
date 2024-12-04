@@ -19,6 +19,10 @@ mmocr = "^1.0.1"
 mmpose = "^1.2.0"
 open_clip_torch="*"
 ultralytics = "8.0.100"
+umap-learn = "^0.5.7"
+transformers = "^4.46.3"
+sentencepiece = "^0.2.0"
+more-itertools = "^10.5.0"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.4"

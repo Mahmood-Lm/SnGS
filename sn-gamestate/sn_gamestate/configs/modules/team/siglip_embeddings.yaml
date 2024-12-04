@@ -1,1 +1,3 @@
 _target_: sn_gamestate.team.siglip_team_clustering_api.TrackletTeamClustering
+cfg:
+batch_size: 64
