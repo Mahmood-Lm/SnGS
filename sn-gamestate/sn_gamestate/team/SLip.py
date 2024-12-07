@@ -50,11 +50,11 @@ def cv2_to_pillow(image: np.ndarray) -> Image.Image:
     Returns:
         Image.Image: The Pillow image.
     """
-    if image.dtype != np.uint8:
-        if image.max() <= 1.0:
-            image = (image * 255).astype(np.uint8)
-        else:
-            image = image.astype(np.uint8)
+    # if image.dtype != np.uint8:
+    #     if image.max() <= 1.0:
+    #         image = (image * 255).astype(np.uint8)
+    #     else:
+    #         image = image.astype(np.uint8)
     return Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
 
 

@@ -1,208 +1,136 @@
-# import pandas as pd
-# import torch
-# import numpy as np
-# import logging
-# import warnings
-# from tracklab.pipeline.videolevel_module import VideoLevelModule
-# from .SLip import TeamClassifier
-# warnings.filterwarnings("ignore")
-
-
-# log = logging.getLogger(__name__)
-
-
-# class TrackletTeamClustering(VideoLevelModule):
-#     """
-#     This module performs team classification on the embeddings of the tracklets to cluster the detections with role "player" into two teams.
-#     Teams are labeled as 0 and 1, and transformer into 'left' and 'right' in a separate module.
-#     """
-#     input_columns = ["track_id", "embeddings", "role"]
-#     output_columns = ["team_cluster"]
-    
-#     def __init__(self, **kwargs):
-#         super().__init__()
-        
-#     @torch.no_grad()
-#     def process(self, detections: pd.DataFrame, metadatas: pd.DataFrame):
-
-#         # Print the columns of the detections DataFrame
-#         # print("Available columns in detections DataFrame:", detections.columns)
-#         print("available columns in metadatas DataFrame:", metadatas.file_path)
-
-#         player_detections = detections[detections.role == "player"]
-#         print("player_detections:", player_detections.embeddings.values)
-
-#         if player_detections.empty:
-#             detections['team_cluster'] = np.nan  # Initialize 'team_cluster' with a default value
-#             return detections
-
-#         # Sample 10% of all player detections for fitting the model
-#         sample_size = int(0.1 * len(player_detections))
-#         sample_detections = player_detections.sample(n=sample_size, random_state=0)
-
-#         # Extract embeddings from the sampled detections
-#         sample_embeddings = np.vstack(sample_detections.embeddings.values)
-
-#         # Initialize the TeamClassifier
-#         team_classifier = TeamClassifier(batch_size=250, device='cuda')
-
-#         # Save a grid image of 100 player crops
-#         team_classifier.save_image_grid(sample_embeddings, 'output/grid_image.png')
-
-#         # Fit the model on the sampled embeddings
-#         team_classifier.fit(sample_embeddings)
-
-#         # Predict the team clusters for all player detections
-#         all_embeddings = np.vstack(player_detections.embeddings.values)
-#         player_detections['team_cluster'] = team_classifier.predict(all_embeddings)
-
-#         # Map the team cluster back to the original detections DataFrame
-#         detections = detections.merge(player_detections[['track_id', 'team_cluster']], on='track_id', how='left', sort=False)
-
-#         return detections
-
-
 import pandas as pd
 import torch
 import numpy as np
 import logging
 import warnings
-from tracklab.pipeline.detectionlevel_module import DetectionLevelModule
-from tracklab.utils.collate import default_collate, Unbatchable
-from sklearn.cluster import KMeans
-from transformers import AutoProcessor, SiglipVisionModel
-import umap
-from tqdm import tqdm
-import cv2
+from tracklab.pipeline.videolevel_module import VideoLevelModule
+from .SLip import TeamClassifier
 from PIL import Image
-from typing import List, TypeVar
+import cv2
+import os
+from tqdm.auto import tqdm
 
 warnings.filterwarnings("ignore")
 
-V = TypeVar("V")
-
 log = logging.getLogger(__name__)
 
-SIGLIP_MODEL_PATH = 'google/siglip-base-patch16-224'
-
-def create_batches(sequence, batch_size):
-    batch_size = max(batch_size, 1)
-    current_batch = []
-    for element in sequence:
-        if len(current_batch) == batch_size:
-            yield current_batch
-            current_batch = []
-        current_batch.append(element)
-    if current_batch:
-        yield current_batch
-
-class TeamClassifier:
-    def __init__(self, device: str = 'cuda', batch_size: int = 32):
-        self.device = device
-        self.batch_size = batch_size
-        self.features_model = SiglipVisionModel.from_pretrained(SIGLIP_MODEL_PATH).to(device)
-        self.processor = AutoProcessor.from_pretrained(SIGLIP_MODEL_PATH)
-        self.reducer = umap.UMAP(n_components=3)
-        self.cluster_model = KMeans(n_clusters=2)
-
-    def extract_features(self, crops: List[np.ndarray]) -> np.ndarray:
-        # Convert OpenCV images to PIL images
-        crops = [Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)) for crop in crops]
-        batches = create_batches(crops, self.batch_size)
-        data = []
-        with torch.no_grad():
-            for batch in tqdm(batches, desc='Embedding extraction'):
-                inputs = self.processor(images=batch, return_tensors="pt").to(self.device)
-                outputs = self.features_model(**inputs)
-                embeddings = torch.mean(outputs.last_hidden_state, dim=1).cpu().numpy()
-                data.append(embeddings)
-        return np.concatenate(data)
-
-    def fit(self, crops):
-        data = self.extract_features(crops)
-        projections = self.reducer.fit_transform(data)
-        self.cluster_model.fit(projections)
-
-    def predict(self, crops):
-        if len(crops) == 0:
-            return np.array([])
-        data = self.extract_features(crops)
-        projections = self.reducer.transform(data)
-        return self.cluster_model.predict(projections)
-
-class TrackletTeamClustering(DetectionLevelModule):
-    input_columns = ["track_id", "embeddings", "role"]
+class TrackletTeamClustering(VideoLevelModule):
+    """
+    This module performs team classification on the crops of the tracklets to cluster the detections with role "player" into two teams.
+    Teams are labeled as 0 and 1, and transformer into 'left' and 'right' in a separate module.
+    """
+    input_columns = ["track_id", "bbox_ltwh", "role", "image_id", "bbox_conf"]
     output_columns = ["team_cluster"]
-    collate_fn = default_collate
 
-    def __init__(self, cfg, device, batch_size, tracking_dataset=None):
-        super().__init__(batch_size=batch_size)
-        self.team_classifier = TeamClassifier(device=device, batch_size=batch_size)
-        self.device = device
-        self.cfg = cfg
-
+    def __init__(self, **kwargs):
+        super().__init__()
 
     @torch.no_grad()
-    def preprocess(self, image, detection: pd.Series, metadata: pd.Series):
-        if detection.role == "player":
-            l, t, r, b = detection.bbox.ltrb(
-            image_shape=(image.shape[1], image.shape[0]), rounded=True
-            )
-            crop = image[t:b, l:r]
-            if crop.shape[0] == 0 or crop.shape[1] == 0:
-                crop = np.zeros((10, 10, 3), dtype=np.uint8)
-            crop = np.array(crop)
-            crop = Unbatchable([crop])
-            batch = {
-                "img": crop,
-            }
+    def process(self, detections: pd.DataFrame, metadatas: pd.DataFrame):
+        # Print the columns of the detections DataFrame
+        # print("available columns in metadatas DataFrame:", metadatas.file_path)
 
-            return batch
-        return None
+        # print("Metadatas:" ,metadatas.columns)
+        # print("******************")
+        # print("Detections:", detections.columns)
 
+        # print(detections.visibility_scores)
 
-    @torch.no_grad()
-    def process(self, batch, detections: pd.DataFrame, metadatas: pd.DataFrame):
         player_detections = detections[detections.role == "player"]
+        # print("player_detections:", player_detections)
 
         if player_detections.empty:
             detections['team_cluster'] = np.nan  # Initialize 'team_cluster' with a default value
             return detections
 
-        # Check if the batch is empty
-        if not batch['img']:
-            detections['team_cluster'] = np.nan  # Initialize 'team_cluster' with a default value
-            return detections
+        # Ensure bbox_conf is numeric
+        player_detections['bbox_conf'] = pd.to_numeric(player_detections['bbox_conf'], errors='coerce')
 
-        # Filter out None values
-        images_np = [img.cpu().numpy() for img in batch['img'] if img is not None]
-        if not images_np:
-            detections['team_cluster'] = np.nan  # Initialize 'team_cluster' with a default value
-            return detections
-        del batch['img']
+        # Select the top 5% most confident player detections for fitting the model
+        sample_size = int(0.05 * len(player_detections))
+        sample_detections = player_detections.nlargest(sample_size, 'bbox_conf')
 
-        # Select a random subset (10%) of the crops for fitting the model
-        subset_size = max(1, int(0.1 * len(images_np)))
-        subset_indices = np.random.choice(len(images_np), subset_size, replace=False)
-        subset_crops = [images_np[i] for i in subset_indices]
+        # Select the top 10% most confident player detections from each image for fitting the model
+        # sample_detections = pd.DataFrame()
+        # for image_id, group in player_detections.groupby('image_id'):
+        #     sample_size = max(1, int(0.1 * len(group)))
+        #     top_detections = group.nlargest(sample_size, 'bbox_conf')
+        #     sample_detections = pd.concat([sample_detections, top_detections])
 
-        # Perform clustering using TeamClassifier
-        self.team_classifier.fit(subset_crops)
-        
-        # Ensure the number of predictions matches the number of player detections
-        # if len(images_np) != len(player_detections):
-        #     raise ValueError("Number of crops does not match number of player detections")
+        # Extract crops for the sampled player detections
+        sample_crops = []
+        for _, row in tqdm(sample_detections.iterrows(), total=sample_detections.shape[0], desc="Collecting sample crops", position=0):
+            image_path = metadatas.loc[metadatas['id'] == row['image_id'], 'file_path'].values[0]
+            image = cv2.imread(image_path)
+            l, t, w, h = map(int, row['bbox_ltwh'])
+            r, b = l + w, t + h
+            crop = image[t:b, l:r]
+            if crop.shape[0] == 0 or crop.shape[1] == 0:
+                crop = np.zeros((10, 10, 3), dtype=np.uint8)
+            sample_crops.append(crop)
 
-        player_detections['team_cluster'] = self.team_classifier.predict(images_np)
+        # Initialize the TeamClassifier
+        team_classifier = TeamClassifier(batch_size=8, device='cuda')
 
-        # Assign the most frequent team cluster to each tracklet
-        tracklet_clusters = player_detections.groupby('track_id')['team_cluster'].agg(lambda x: x.value_counts().idxmax()).reset_index()
+        # Save a grid image of 100 player crops
+        team_classifier.save_image_grid(sample_crops, 'output/fit.png')
 
-        # Ensure the shapes match before merging
-        if 'team_cluster' in detections.columns:
-            detections = detections.drop(columns=['team_cluster'])
+        # Fit the model on the sampled crops
+        team_classifier.fit(sample_crops)
+
+        # Remove the 10% crops from memory
+        del sample_crops
+
+        # Collect crops for the 5% most confident bounding boxes of each tracklet
+        tracklet_clusters = []
+        all_top_crops = []
+        tracklet_indices = []
+
+        for track_id, group in tqdm(player_detections.groupby('track_id'), desc="Collecting tracklet crops"):
+            # If the tracklet has less than 4 entries, take all of them
+            if len(group) < 4:
+                top_detections = group
+            else:  
+                # Sort by confidence and select the top 5% (at least 1)
+                top_detections = group.nlargest(max(1, int(0.05 * len(group))), 'bbox_conf')
+                for _, row in top_detections.iterrows():
+                    image_path = metadatas.loc[metadatas['id'] == row['image_id'], 'file_path'].values[0]
+                    image = cv2.imread(image_path)
+                    l, t, w, h = map(int, row['bbox_ltwh'])
+                    r, b = l + w, t + h
+                    crop = image[t:b, l:r]
+                    if crop.shape[0] == 0 or crop.shape[1] == 0:
+                        crop = np.zeros((10, 10, 3), dtype=np.uint8)
+                    all_top_crops.append(crop)
+                    tracklet_indices.append(track_id)
+
+        # Predict the team clusters for all collected crops
+        clusters = team_classifier.predict(all_top_crops)
+
+        # Save a grid image of 100 player crops
+        team_classifier.save_image_grid(all_top_crops, 'output/predict.png')
+
+        # Remove the collected crops from memory
+        del all_top_crops
+
+        # Assign the most frequent cluster to each tracklet
+        tracklet_cluster_map = {}
+        for track_id, cluster in zip(tracklet_indices, clusters):
+            if track_id not in tracklet_cluster_map:
+                tracklet_cluster_map[track_id] = []
+            tracklet_cluster_map[track_id].append(cluster)
+
+        for track_id, cluster_list in tracklet_cluster_map.items():
+            most_frequent_cluster = np.bincount(cluster_list).argmax()
+            tracklet_clusters.append((track_id, most_frequent_cluster))
+
+        # Create a DataFrame for the tracklet clusters
+        tracklet_clusters_df = pd.DataFrame(tracklet_clusters, columns=['track_id', 'team_cluster'])
 
         # Map the team cluster back to the original detections DataFrame
-        detections = detections.merge(tracklet_clusters, on='track_id', how='left', sort=False, suffixes=('', '_duplicate'))
+        detections = detections.merge(tracklet_clusters_df, on='track_id', how='left', sort=False)
+
+        
+        del tracklet_clusters, tracklet_cluster_map, tracklet_indices, tracklet_clusters_df
 
         return detections

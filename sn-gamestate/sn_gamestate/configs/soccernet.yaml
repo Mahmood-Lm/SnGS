@@ -15,11 +15,11 @@ defaults:
   - modules/reid: prtreid
   - modules/track: bpbreid_strong_sort
   - modules/jersey_number_detect: openclip
-  - modules/team: siglip_embeddings #kmeans_embeddings
+  - modules/team: siglip_embeddings
   - modules/team_side: mean_position
   - modules/tracklet_agg: voting_role_jn
-  - modules/pitch : tvcalib
-  - modules/calibration: tvcalib
+  - modules/pitch : nbjw_calib
+  - modules/calibration: nbjw_calib
   - _self_
 
 # Pipeline definition :
@@ -69,20 +69,20 @@ print_config: False
 dataset:
   nvid: 1  # For a quick first inference, only the first video is processed. Use "-1" to process all the videos.
   nframes: -1 # For testing on only a few frames, set to a positive number. Will disable evaluation !
-  eval_set: "test"  # Tracking is performed on the SoccerNet validation set. Choose from {"train", "valid", "test", "challenge"}.
+  eval_set: "valid"  # Tracking is performed on the SoccerNet validation set. Choose from {"train", "valid", "test", "challenge"}.
   dataset_path: ${data_dir}/SoccerNetGS  # The SoccerNet game state dataset is located under the data path (defined above) in the 'SoccerNetGS' folder
   vids_dict: # Use one key per split (valid, test, etc)
-    test: ['SNGS-118']  # Specify explicitly which video to apply tracking on, e.g. ['SNGS-04', 'SNGS-51'] . Ignored when left empty.
+    valid: ['SNGS-024']  # Specify explicitly which video to apply tracking on, e.g. ['SNGS-04', 'SNGS-51'] . Ignored when left empty.
 
 # Tracker state (save computation time by dumping tracking results on disk for later re-use)
 state:
-  save_file: "states/${experiment_name}.pklz"  # 'null' to disable saving. This is the save path for the tracker_state object that contains all modules outputs (bboxes, reid embeddings, jersey numbers, roles, teams, etc)
-  load_file: "/home/Mahmood/soccernet/sn-gamestate/outputs/sn-gamestate/2024-10-30/SNGS-118/states/sn-gamestate.pklz" # 'null' to disable loading. Load a file that was saved with the 'state.save_file' option above. Don't forget to remove from the pipeline all modules that should not be run again, but loaded from the saved tracker state.
+  save_file: null #"states/${experiment_name}.pklz"  # 'null' to disable saving. This is the save path for the tracker_state object that contains all modules outputs (bboxes, reid embeddings, jersey numbers, roles, teams, etc)
+  load_file: "/home/Mahmood/soccernet/sn-gamestate/outputs/sn-gamestate/2024-12-06/24-Allnew/states/sn-gamestate.pklz" # 'null' to disable loading. Load a file that was saved with the 'state.save_file' option above. Don't forget to remove from the pipeline all modules that should not be run again, but loaded from the saved tracker state.
 
 # Visualization
 visualization:
   cfg:
-    save_videos: True  # Save a .mp4 video on disk with the game state reconstruction output (see 'tracklab/tracklab/configs/visualization' for more options)
+    save_videos: False  # Save a .mp4 video on disk with the game state reconstruction output (see 'tracklab/tracklab/configs/visualization' for more options)
     process_n_videos: 1     # Amount of video to visualize, -1 to process all videos
     prediction:                 
       draw_bbox: True #CHANGE TO TRUE
