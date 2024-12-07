@@ -73,7 +73,7 @@ class TrackletTeamClustering(VideoLevelModule):
         team_classifier = TeamClassifier(batch_size=8, device='cuda')
 
         # Save a grid image of 100 player crops
-        team_classifier.save_image_grid(sample_crops, 'output/fit.png')
+        # team_classifier.save_image_grid(sample_crops, 'output/fit.png')
 
         # Fit the model on the sampled crops
         team_classifier.fit(sample_crops)
@@ -87,28 +87,28 @@ class TrackletTeamClustering(VideoLevelModule):
         tracklet_indices = []
 
         for track_id, group in tqdm(player_detections.groupby('track_id'), desc="Collecting tracklet crops"):
-            # If the tracklet has less than 4 entries, take all of them
-            if len(group) < 4:
+            # If the tracklet has less than 6 entries, take all of them
+            if len(group) < 6:
                 top_detections = group
             else:  
-                # Sort by confidence and select the top 5% (at least 1)
-                top_detections = group.nlargest(max(1, int(0.05 * len(group))), 'bbox_conf')
-                for _, row in top_detections.iterrows():
-                    image_path = metadatas.loc[metadatas['id'] == row['image_id'], 'file_path'].values[0]
-                    image = cv2.imread(image_path)
-                    l, t, w, h = map(int, row['bbox_ltwh'])
-                    r, b = l + w, t + h
-                    crop = image[t:b, l:r]
-                    if crop.shape[0] == 0 or crop.shape[1] == 0:
-                        crop = np.zeros((10, 10, 3), dtype=np.uint8)
-                    all_top_crops.append(crop)
-                    tracklet_indices.append(track_id)
+                # Sort by confidence and select the top 5% (at least 4)
+                top_detections = group.nlargest(max(5, int(0.05 * len(group))), 'bbox_conf')
+            for _, row in top_detections.iterrows():
+                image_path = metadatas.loc[metadatas['id'] == row['image_id'], 'file_path'].values[0]
+                image = cv2.imread(image_path)
+                l, t, w, h = map(int, row['bbox_ltwh'])
+                r, b = l + w, t + h
+                crop = image[t:b, l:r]
+                if crop.shape[0] == 0 or crop.shape[1] == 0:
+                    crop = np.zeros((10, 10, 3), dtype=np.uint8)
+                all_top_crops.append(crop)
+                tracklet_indices.append(track_id)
 
         # Predict the team clusters for all collected crops
         clusters = team_classifier.predict(all_top_crops)
 
         # Save a grid image of 100 player crops
-        team_classifier.save_image_grid(all_top_crops, 'output/predict.png')
+        # team_classifier.save_image_grid(all_top_crops, 'output/predict.png')
 
         # Remove the collected crops from memory
         del all_top_crops

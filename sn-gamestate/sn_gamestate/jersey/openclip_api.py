@@ -23,8 +23,8 @@ class OpenCLIP(DetectionLevelModule):
         self.model = None
         self.preprocess1 = None
         self.tokenizer = None
-        # self.pretrained_path = '/home/Mahmood/soccernet/sn-gamestate/pretrained_models/jersey/V3_epoch_5.pt'
-        self.pretrained_path = '/home/Mahmood/soccernet/sn-gamestate/wise-ft/wft_models/wft_model_0.5.pt'
+        self.pretrained_path = '/home/Mahmood/soccernet/sn-gamestate/pretrained_models/jersey/V3_epoch_5.pt'
+        # self.pretrained_path = '/home/Mahmood/soccernet/sn-gamestate/wise-ft/wft_models/wft_model_0.5.pt'
 
 
     # Load the model and tokenizer when the jersey recognition module is needed as to not overload the memory.
