@@ -43,7 +43,7 @@ theta_1 = model_finetuned.state_dict()
 assert set(theta_0.keys()) == set(theta_1.keys())
 
 # Set the mixing coefficient (alpha)
-alpha = 0.5  # You can adjust this value
+alpha = 0.8  # You can adjust this value
 
 # Interpolate the weights
 theta = {
@@ -58,4 +58,4 @@ model_wiseft.load_state_dict(theta)
 print("WiSE-FT model weights:", list(model_wiseft.parameters())[0][0][:5])
 
 # Save the WiSE-FT model
-torch.save(model_wiseft.state_dict(), "/home/Mahmood/soccernet/sn-gamestate/wise-ft/wft_models/wft_model_0.5.pt")
+torch.save(model_wiseft.state_dict(), "/home/Mahmood/soccernet/sn-gamestate/wise-ft/wft_models/wft_model_0.8.pt")

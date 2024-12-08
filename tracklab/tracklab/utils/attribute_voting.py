@@ -17,8 +17,8 @@ def select_highest_voted_att(atts, atts_confidences=None):
     return max_confidence_att
 
 
-# Using the weighted average confidence instead of the total confidence
-def select_heaviest_voted_att(atts, atts_confidences=None, min_confidence=0.0):
+def select_heaviest_voted_att(atts, atts_confidences=None, min_confidence=0.0, confidence_weight=2.0):  #FIXME
+    # Confidence weight is used to adjust the importance of the confidence value. set to 1.0 to keep the confidence as is. set to 0.0 to ignore the confidence.
     confidence_sum = {}
     count_sum = {}
     atts_confidences = [1] * len(atts) if atts_confidences is None else atts_confidences
@@ -30,7 +30,7 @@ def select_heaviest_voted_att(atts, atts_confidences=None, min_confidence=0.0):
         if att not in confidence_sum:
             confidence_sum[att] = 0
             count_sum[att] = 0
-        confidence_sum[att] += conf
+        confidence_sum[att] += conf ** confidence_weight  # Apply the confidence weight
         count_sum[att] += 1
     
     # Calculate weighted average confidence

@@ -12,7 +12,7 @@ from tqdm.auto import tqdm
 
 warnings.filterwarnings("ignore")
 
-log = logging.getLogger(__name__)
+# log = logging.getLogger(__name__)
 
 class TrackletTeamClustering(VideoLevelModule):
     """
@@ -91,7 +91,7 @@ class TrackletTeamClustering(VideoLevelModule):
             if len(group) < 6:
                 top_detections = group
             else:  
-                # Sort by confidence and select the top 5% (at least 4)
+                # Sort by confidence and select the top 5% (at least 5)
                 top_detections = group.nlargest(max(5, int(0.05 * len(group))), 'bbox_conf')
             for _, row in top_detections.iterrows():
                 image_path = metadatas.loc[metadatas['id'] == row['image_id'], 'file_path'].values[0]

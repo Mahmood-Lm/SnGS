@@ -180,7 +180,7 @@ class YOLOv8(ImageLevelModule):
                     bbox_ltwh = ltrb_to_ltwh(bbox.xyxy[0], shape)
                     bbox_width = bbox_ltwh[2]
                     bbox_height = bbox_ltwh[3]
-                    print(f"Bounding box size - Width: {bbox_width}, Height: {bbox_height}, Confidence: {bbox.conf}")
+                    # print(f"Bounding box size - Width: {bbox_width}, Height: {bbox_height}, Confidence: {bbox.conf}")
                     detections.append(
                         pd.Series(
                             dict(

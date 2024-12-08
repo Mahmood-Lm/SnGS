@@ -19,12 +19,13 @@ class OpenCLIP(DetectionLevelModule):
     def __init__(self, cfg, device, batch_size, tracking_dataset=None):
         super().__init__(batch_size=batch_size)
         self.cfg = cfg
+        self.batch_size = batch_size
         self.device = device
         self.model = None
         self.preprocess1 = None
         self.tokenizer = None
-        self.pretrained_path = '/home/Mahmood/soccernet/sn-gamestate/pretrained_models/jersey/V3_epoch_5.pt'
-        # self.pretrained_path = '/home/Mahmood/soccernet/sn-gamestate/wise-ft/wft_models/wft_model_0.5.pt'
+        # self.pretrained_path = '/home/Mahmood/soccernet/sn-gamestate/pretrained_models/jersey/V3_epoch_5.pt'
+        self.pretrained_path = '/home/Mahmood/soccernet/sn-gamestate/wise-ft/wft_models/wft_model_0.8.pt'
 
 
     # Load the model and tokenizer when the jersey recognition module is needed as to not overload the memory.
@@ -113,7 +114,7 @@ class OpenCLIP(DetectionLevelModule):
             filtered_jersey_numbers = []
             filtered_confidences = []
             for jersey_number, confidence in zip(jersey_numbers, confidences.tolist()):
-                if jersey_number is not None and confidence >= 0.7:
+                if jersey_number is not None and confidence >= 0.9:
                     filtered_jersey_numbers.append(str(jersey_number))
                     filtered_confidences.append(confidence)
                     print(f"Jersey number: {jersey_number}, Confidence: {confidence}")
