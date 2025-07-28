@@ -4,7 +4,7 @@
 [![Challenge](https://img.shields.io/badge/SoccerNet-GSR%20Challenge-blue)](https://github.com/SoccerNet/sn-gamestate/tree/main)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This repository contains the code and methodology for our high-performance pipeline for the **SoccerNet Game State Reconstruction (GSR) Challenge**. Our approach systematically enhances the official baseline model, addressing key bottlenecks to achieve a significant boost in accuracy. Our work secured the **second-best performance** among all participants, demonstrating a **120% improvement** over the baseline on the challenge set.
+This repository contains the code and methodology for our high-performance pipeline for the **SoccerNet Game State Reconstruction (GSR) Challenge**. Our approach systematically enhances the official baseline model, addressing key bottlenecks to achieve a significant boost in accuracy. Our work secures the **second-best performance** among all participants of the 2024 Challenge, demonstrating a **120% improvement** over the baseline on the challenge set.
 
 ## Abstract
 
