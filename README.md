@@ -1,6 +1,6 @@
 # Beyond the Baseline: Enhanced SoccerNet Game State Reconstruction
 
-[![Paper](https://img.shields.io/badge/paper-PDF-red)](./BTB.pdf)
+<!-- [![Paper](https://img.shields.io/badge/paper-PDF-red)](./BTB.pdf) -->
 [![Challenge](https://img.shields.io/badge/SoccerNet-GSR%20Challenge-blue)](https://github.com/SoccerNet/sn-gamestate/tree/main)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -30,7 +30,7 @@ Our pipeline replaces critical components of the SoccerNet-GSR baseline to achie
     * Accurately separates teams even when uniforms are visually similar.
 
 4.  **🗺️ Precise Pitch Localization:**
-    * Replaced the baseline's TVCalib with the state-of-the-art **"No Bells, Just Whistles" (NBJW)** method.
+    * Replaced the baseline's TVCalib with the state-of-the-art [**"No Bells, Just Whistles" (NBJW)**](https://github.com/mguti97/No-Bells-Just-Whistles) method.
     * Achieves highly accurate camera calibration and player projection, especially in challenging center-pitch camera views.
 
 ## 📊 Performance
@@ -57,3 +57,17 @@ Our method achieved the **2nd rank** on the official challenge leaderboard.
 | Challenge | 23.36            | **51.52** | **+120%** |
 
 ---
+<!--
+## 📄 Citation
+
+If you use this work, please cite our paper:
+
+```bibtex
+@inproceedings{your-name-2024-btb,
+    title={Beyond the Baseline: A Novel Approach for Enhanced Accuracy in SoccerNet Game State Reconstruction},
+    author={Anonymous},
+    booktitle={Proceedings of the ...},
+    year={2024}
+}
+```
+-->
