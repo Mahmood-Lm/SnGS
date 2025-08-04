@@ -17,7 +17,9 @@ The SoccerNet Game State Reconstruction (GSR) challenge provides a crucial bench
 
 ## 🚀 Key Features & Enhancements
 
-Our pipeline replaces critical components of the SoccerNet-GSR baseline to achieve state-of-the-art results.
+Our pipeline replaces critical components of the SoccerNet-GSR baseline to achieve near state-of-the-art results.
+
+![Demonstration of the Updated Pipeline](assets/OurPipeline.PNG)
 
 1.  **⚽ Robust Athlete Detection:**
     * Replaced the standard YOLOv8x with a model **fine-tuned on the SoccerNet v3 H250 dataset**.
